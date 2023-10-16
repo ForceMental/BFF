@@ -11,7 +11,7 @@ from django.contrib.auth import authenticate
 from .backends import AzureADBackend
 from datetime import datetime
 from .models import Usuario
-
+EXTERNAL_HOST = "3.81.65.202"
 @permission_classes([IsAuthenticated])
 def view_all_users(request):
     # Recupera todos los usuarios registrados en la base de datos
@@ -82,14 +82,14 @@ def get_user_view(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_all_comunas(request):
-    API_URL = f"http://127.0.0.1:8000/api/comunas/"
+    API_URL = f"http://{EXTERNAL_HOST}:8000/api/comunas/"
     response = requests.get(API_URL)
     return Response(response.json())
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_all_client(request):
-    API_URL = f"http://127.0.0.1:8000/api/clientes/"
+    API_URL = f"http://{EXTERNAL_HOST}:8000/api/clientes/"
     response = requests.get(API_URL)
     return Response(response.json())
 
@@ -110,7 +110,7 @@ def insertar_persona(request):
         return Response({"error": "Datos incompletos"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        external_url = "http://localhost:8000/api/clientes/create/"
+        external_url = f"http://{EXTERNAL_HOST}:8000/api/clientes/create/"
 
         data_to_send = {
             "nombre": nombre,
@@ -134,7 +134,7 @@ def insertar_persona(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_all_product(request):
-    API_URL = f"http://127.0.0.1:8020/api/productos/"
+    API_URL = f"http://{EXTERNAL_HOST}:8020/api/productos/"
     response = requests.get(API_URL)
     return Response(response.json())
 
@@ -149,7 +149,7 @@ def get_visitas_by_date(request, fecha):
         fecha_formateada = date_obj.strftime('%d-%m-%Y')
         print (fecha_formateada)
         # URL de la API externa
-        API_URL = f"http://127.0.0.1:8000/api/visitas/{fecha_formateada}"
+        API_URL = f"http://{EXTERNAL_HOST}:8000/api/visitas/{fecha_formateada}"
 
         # Realiza una solicitud GET a la API externa
         response = requests.get(API_URL)
@@ -182,7 +182,7 @@ def crear_visita(request):
         return Response({"error": "Datos incompletos"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        external_url = "http://localhost:8000/api/visitas/"
+        external_url = f"http://{EXTERNAL_HOST}:8000/api/visitas/"
 
         data_to_send = {
             "tipo_visita": tipo_visita,
