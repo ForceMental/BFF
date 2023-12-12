@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'bff_app',
     'corsheaders',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [

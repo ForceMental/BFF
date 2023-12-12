@@ -11,7 +11,7 @@ from django.contrib.auth import authenticate
 from .backends import AzureADBackend
 from datetime import datetime
 from .models import Usuario
-EXTERNAL_HOST = "3.81.65.202"
+EXTERNAL_HOST = "107.22.174.168"
 @permission_classes([IsAuthenticated])
 def view_all_users(request):
     # Recupera todos los usuarios registrados en la base de datos
@@ -34,6 +34,7 @@ def view_all_users(request):
     return JsonResponse({'users': user_list})
 
 @permission_classes([IsAuthenticated])
+@api_view(['GET'])
 def get_user_view(request):
     # Obteniendo el token del encabezado de autorización
     auth_header = request.headers.get('Authorization')
@@ -205,3 +206,122 @@ def crear_visita(request):
             )
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+def obtener_visitas(fecha):
+    try:
+        # Convierte la fecha de "dd-mm-yyyy" a un objeto datetime
+        date_obj = datetime.strptime(fecha, '%d-%m-%Y')
+
+        # Formatea la fecha en el formato deseado
+        fecha_formateada = date_obj.strftime('%d-%m-%Y')
+        print (fecha_formateada)
+        # URL de la API externa
+        API_URL = f"http://{EXTERNAL_HOST}:8000/api/visitas/{fecha_formateada}"
+
+        # Realiza una solicitud GET a la API externa
+        response = requests.get(API_URL)
+
+        # Verifica si la solicitud fue exitosa (código de respuesta 200)
+        if response.status_code == 200:
+            visitas = response.json()
+            return Response(visitas)
+        else:
+            return Response({'error': 'Error al obtener las visitas'}, status=response.status_code)
+
+    except Exception as e:
+        return Response({'error': 'Error al procesar la solicitud'}, status=400)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_visitas_by_date_id(request):
+    try:
+        fecha_str = request.query_params.get('fecha', None)
+        empleado_id = request.query_params.get('id_empleado', None)
+
+        if not fecha_str or not empleado_id:
+            return Response({'error': 'Debes proporcionar tanto fecha como ID de empleado'}, status=400)
+
+        # Convierte la fecha de "dd-mm-yyyy" a un objeto datetime
+        date_obj = datetime.strptime(fecha_str, '%d-%m-%Y')
+
+        # Formatea la fecha en el formato deseado
+        fecha_formateada = date_obj.strftime('%d-%m-%Y')
+
+        # URL de la API externa
+        API_URL = f"http://{EXTERNAL_HOST}:8000/api/visitasIdFecha/?fecha={fecha_formateada}&id_empleado={empleado_id}"
+
+        # Realiza una solicitud GET a la API externa
+        response = requests.get(API_URL)
+
+        # Verifica si la solicitud fue exitosa (código de respuesta 200)
+        if response.status_code == 200:
+            visitas = response.json()
+            return Response(visitas)
+        else:
+            return Response({'error': 'Error al obtener las visitas'}, status=response.status_code)
+
+    except Exception as e:
+        return Response({'error': 'Error al procesar la solicitud'}, status=400)
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])  
+def reprogramar_serv(request, pk):
+    fecha_nueva_str = request.data.get('fecha_visita')
+
+    # Validar la fecha de visita
+    if not fecha_nueva_str:
+        return Response(
+            {"message": "Debe proporcionar una nueva fecha para reprogramar la visita."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        datos = {'fecha_visita': fecha_nueva_str}
+        url_servicio_externo = f'http://{EXTERNAL_HOST}:8000/api/reprogramar/{pk}/'
+        response = requests.patch(url_servicio_externo, json=datos)
+        
+        if response.status_code == requests.codes.ok:
+            return Response(response.json(), status=status.HTTP_200_OK)
+        else:
+            return Response(None, status=response.status_code)
+    except requests.RequestException as e:
+        return Response(None, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])  
+def cancelar_visita(request, pk):
+    url = f'http://{EXTERNAL_HOST}:8000/api/visita/{pk}/cancelar/'
+    response = requests.post(url)
+    
+    if response.ok:
+        return Response(response.json())
+    else:
+        return Response({'status': 'error', 'message': 'Error en la solicitud'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])  
+def finalizar_visita(request, pk):
+    url = f'http://{EXTERNAL_HOST}:8000/api/visita/{pk}/finalizar/'
+    response = requests.post(url)
+    
+    if response.ok:
+        return Response(response.json())
+    else:
+        return Response({'status': 'error', 'message': 'Error en la solicitud'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+VENTAS_SERVICE_URL = "http://{EXTERNAL_HOST}:8030/api/ventas/"   
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])  
+def enviar_datos_a_ventas(request):
+    datos = request.data
+
+    try:
+        response = requests.post(VENTAS_SERVICE_URL, json=datos)
+        if response.ok:
+            return Response({"mensaje": "Datos enviados correctamente al servicio de ventas"})
+        else:
+            return Response({"mensaje": f"Error al enviar los datos a ventas. Código de estado: {response.status_code}"}, status=500)
+    except requests.RequestException as e:
+        return Response({"mensaje": f"Error de conexión al enviar datos a ventas: {e}"}, status=500)
