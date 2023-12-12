@@ -291,7 +291,7 @@ def reprogramar_serv(request, pk):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])  
 def cancelar_visita(request, pk):
-    url = f'http://{EXTERNAL_HOST}:8000/api/visita/{pk}/cancelar/'
+    url = f'http://107.22.174.168:8000/api/visita/{pk}/cancelar/'
     response = requests.post(url)
     
     if response.ok:
@@ -325,3 +325,32 @@ def enviar_datos_a_ventas(request):
             return Response({"mensaje": f"Error al enviar los datos a ventas. Código de estado: {response.status_code}"}, status=500)
     except requests.RequestException as e:
         return Response({"mensaje": f"Error de conexión al enviar datos a ventas: {e}"}, status=500)
+    
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])  
+def obtener_ventas(request):
+    URL_VENTAS_API = "http://107.22.174.168:8030/api/ventas/"
+    response = requests.get(URL_VENTAS_API)
+
+    if response.status_code == 200:
+        datos_ventas = response.json()
+
+        for venta in datos_ventas:
+            ejecutivo_user_id = venta.get('ejecutivo_id')
+
+            if ejecutivo_user_id:
+                try:
+                    # Encuentra al ejecutivo por su user_id en el modelo Usuario
+                    ejecutivo = Usuario.objects.get(user_id=ejecutivo_user_id)
+                    # Agrega el nombre del ejecutivo a los datos de venta
+                    venta['nombre_ejecutivo'] = ejecutivo.first_name  # O cualquier campo deseado del usuario
+                except Usuario.DoesNotExist:
+                    venta['nombre_ejecutivo'] = 'Ejecutivo no encontrado'
+            else:
+                venta['nombre_ejecutivo'] = 'Sin asignar'
+
+        return Response(datos_ventas)
+    else:
+        # Si la solicitud no fue exitosa, maneja el error aquí
+        print("No se pudo obtener datos de ventas")
+        return Response(status=500)

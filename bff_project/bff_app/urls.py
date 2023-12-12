@@ -15,6 +15,6 @@ urlpatterns = [
     path('reprogramar-visita/<int:pk>/', views.reprogramar_serv, name='reprogramar_visita'),
     path('cancelar/<int:pk>/', views.cancelar_visita, name='cancelar'),
     path('finalizar/<int:pk>/', views.finalizar_visita, name='finalizar'),
-    path('ventas/', views.enviar_datos_a_ventas, name='ventas')
-
+    path('ventas/', views.enviar_datos_a_ventas, name='ventas'),
+    path('obtener_ventas/', views.obtener_ventas, name='obtener_ventas'),
 ]
