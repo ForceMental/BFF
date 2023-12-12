@@ -310,7 +310,7 @@ def finalizar_visita(request, pk):
     else:
         return Response({'status': 'error', 'message': 'Error en la solicitud'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-VENTAS_SERVICE_URL = "http://{EXTERNAL_HOST}:8030/api/ventas/"   
+VENTAS_SERVICE_URL = f"http://{EXTERNAL_HOST}:8030/api/ventas/"   
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])  
